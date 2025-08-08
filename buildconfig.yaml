@@ -1,0 +1,14 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: contador-app
+spec:
+  runPolicy: Serial
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+  output:
+    to:
+      kind: ImageStreamTag
+      name: contador-app:latest

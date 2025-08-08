@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contador-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: contador-app
+  template:
+    metadata:
+      labels:
+        app: contador-app
+    spec:
+      containers:
+        - name: contador-app
+          image: image-registry.openshift-image-registry.svc:5000/contador-pvc/contador-app:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: dados
+              mountPath: /data
+      volumes:
+        - name: dados
+          persistentVolumeClaim:
+            claimName: contador-pvc
