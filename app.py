@@ -1,32 +1,36 @@
 from flask import Flask
+from prometheus_client import Counter, Gauge, generate_latest
+import random
 import os
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 app = Flask(__name__)
-FILE = "/data/contador.txt"
 
-# Métrica personalizada
-contador_metric = Counter('acessos_total', 'Número total de acessos à rota /')
+acessos = Counter("acessos_total", "Número total de acessos à rota /")
+temperatura = Gauge("temperatura_ambiente", "Temperatura atual simulada")
 
 @app.route("/")
 def index():
-    contador_metric.inc()
+    acessos.inc()
+
+    # Simular temperatura
+    temperatura.set(random.uniform(20.0, 35.0))  # ex: 25.3
+
     os.makedirs("/data", exist_ok=True)
-    if not os.path.exists(FILE):
-        with open(FILE, "w") as f:
-            f.write("1")
-        return "Iniciado com contador 1"
-    with open(FILE, "r+") as f:
-        count = int(f.read())
-        count += 1
-        f.seek(0)
-        f.write(str(count))
-        f.truncate()
-    return f"Contador atual: {count}"
+    caminho = "/data/contador.txt"
+
+    if os.path.exists(caminho):
+        with open(caminho, "r") as f:
+            contador = int(f.read())
+    else:
+        contador = 0
+
+    contador += 1
+
+    with open(caminho, "w") as f:
+        f.write(str(contador))
+
+    return f"Iniciado com contador {contador}"
 
 @app.route("/metrics")
 def metrics():
-    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    return generate_latest(), 200, {"Content-Type": "text/plain; charset=utf-8"}
