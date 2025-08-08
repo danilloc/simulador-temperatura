@@ -1,26 +1,53 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: contador-app
+  name: simulador-temperatura-git
+  namespace: app-metricas
+  labels:
+    app: simulador-temperatura-git
+    app.kubernetes.io/component: simulador-temperatura-git
+    app.kubernetes.io/instance: simulador-temperatura-git
+    app.kubernetes.io/name: simulador-temperatura-git
+    app.kubernetes.io/part-of: simulador-temperatura-git-app
+  annotations:
+    app.openshift.io/vcs-uri: 'https://github.com/danilloc/simulador-temperatura.git'
+    alpha.image.policy.openshift.io/resolve-names: '*'
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"simulador-temperatura-git:latest","namespace":"app-metricas"},"fieldPath":"spec.template.spec.containers[?(@.name==\"simulador-temperatura-git\")].image","paused":false}]
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: contador-app
+      app: simulador-temperatura-git
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
   template:
     metadata:
       labels:
-        app: contador-app
+        app: simulador-temperatura-git
+        deployment: simulador-temperatura-git
     spec:
       containers:
-        - name: contador-app
-          image: image-registry.openshift-image-registry.svc:5000/contador-pvc/contador-app:latest
+        - name: simulador-temperatura-git
+          image: image-registry.openshift-image-registry.svc:5000/app-metricas/simulador-temperatura-git:latest
           ports:
             - containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: Always
           volumeMounts:
-            - name: dados
+            - name: data-volume
               mountPath: /data
       volumes:
-        - name: dados
+        - name: data-volume
           persistentVolumeClaim:
-            claimName: contador-pvc
+            claimName: data-volume
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
